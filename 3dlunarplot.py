@@ -118,44 +118,13 @@ for latitudes in np.linspace(lat_min, lat_max, num_steps_lat):
     Temps[lat_count-1, long_count-1] = SurfaceTemperature(latitudes, times)[0]
 
 
-def cart2sph(x, y, z):
-    dxy = np.sqrt(x**2 + y**2)
-    r = np.sqrt(dxy**2 + z**2)
-    theta = np.arctan2(y, x)
-    phi = np.arctan2(z, dxy)
-    theta, phi = np.rad2deg([theta, phi])
-    return theta % 360, phi, r
+#this code below was taken from this post: https://stackoverflow.com/questions/22128909/plotting-the-temperature-distribution-on-a-sphere-with-python
 
-def sph2cart(theta, phi, r=1):
-    theta, phi = np.deg2rad([theta, phi])
-    z = r * np.sin(phi)
-    rcosphi = r * np.cos(phi)
-    x = rcosphi * np.cos(theta)
-    y = rcosphi * np.sin(theta)
-    return x, y, z
-
-# random data
-pts = 1 - 2 * np.random.rand(500, 3)
-l = np.sqrt(np.sum(pts**2, axis=1))
-pts = pts / l[:, np.newaxis]
-T = 150 * np.random.rand(500)
 
 # naive IDW-like interpolation on regular grid
-theta, phi, r = cart2sph(*pts.T)
 nrows, ncols = (361,361)
 lon, lat = np.meshgrid(np.linspace(0,360,ncols), np.linspace(-90,90,nrows))
-xg,yg,zg = sph2cart(lon,lat)
-Ti = np.zeros_like(lon)
-for r in range(nrows):
-    for c in range(ncols):
-        v = np.array([xg[r,c], yg[r,c], zg[r,c]])
-        angs = np.arccos(np.dot(pts, v))
-        idx = np.where(angs == 0)[0]
-        if idx.any():
-            Ti[r,c] = T[idx[0]]
-        else:
-            idw = 1 / angs**2 / sum(1 / angs**2)
-            Ti[r,c] = np.sum(T * idw)
+
 
 # set up map projection
 map = Basemap(projection='ortho', lat_0=30, lon_0=180)
@@ -169,6 +138,6 @@ cs = map.contourf(x, y, Temps, 15)
 plt.title('Contours of T')
 plt.show()
 
-
+#Below is the 2d view of the (daytime) data from this paper: https://ntrs.nasa.gov/api/citations/20150010748/downloads/20150010748.pdf
 #plt.imshow(Temps, cmap='hot', interpolation='nearest')
 #plt.show()

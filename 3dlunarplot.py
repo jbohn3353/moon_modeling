@@ -2,9 +2,11 @@ from pylab import figure, cm
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
+from mpl_toolkits.basemap import Basemap
+
 import sys as sys
 
-def SurfaceTemperature(lat, time):
+def SurfaceTemperature(lat, time):#From jupyter notebook
 
   # lat = 40 # in degrees
 
@@ -86,5 +88,87 @@ def SurfaceTemperature(lat, time):
 
   T = (262*(np.sqrt(np.cos(psi)))) + 130
   # print('Temperature at', time_string, 'at a latitude of', lat, 'degrees is:', T, 'Kelvin')
-
   return [T, psi_d]
+
+step_size_times_hrs = 2/60
+times_start = 6 # Dawn
+times_stop = 18 # Dusk
+# Bear in mind that this entire plot is only for dayside temperatures.
+
+lat_min = -90
+lat_max = 90
+lat_step = 0.5
+
+num_steps_time = int(((times_stop - times_start)/step_size_times_hrs) + 1)
+num_steps_lat = int(((lat_max - lat_min)/lat_step) + 1)
+print("Matrix size: ", num_steps_lat, "x", num_steps_time)
+print(" ")
+
+Temps = np.ones((num_steps_lat, num_steps_time), float)
+
+lat_count = 0
+y_axis_qty = np.linspace(lat_min, lat_max, num_steps_lat)
+x_axis_qty = np.linspace(times_start, times_stop, num_steps_time)
+
+for latitudes in np.linspace(lat_min, lat_max, num_steps_lat):
+  lat_count = lat_count + 1
+  long_count = 0
+  for times in np.linspace(times_start, times_stop, num_steps_time):
+    long_count = long_count + 1
+    Temps[lat_count-1, long_count-1] = SurfaceTemperature(latitudes, times)[0]
+
+
+def cart2sph(x, y, z):
+    dxy = np.sqrt(x**2 + y**2)
+    r = np.sqrt(dxy**2 + z**2)
+    theta = np.arctan2(y, x)
+    phi = np.arctan2(z, dxy)
+    theta, phi = np.rad2deg([theta, phi])
+    return theta % 360, phi, r
+
+def sph2cart(theta, phi, r=1):
+    theta, phi = np.deg2rad([theta, phi])
+    z = r * np.sin(phi)
+    rcosphi = r * np.cos(phi)
+    x = rcosphi * np.cos(theta)
+    y = rcosphi * np.sin(theta)
+    return x, y, z
+
+# random data
+pts = 1 - 2 * np.random.rand(500, 3)
+l = np.sqrt(np.sum(pts**2, axis=1))
+pts = pts / l[:, np.newaxis]
+T = 150 * np.random.rand(500)
+
+# naive IDW-like interpolation on regular grid
+theta, phi, r = cart2sph(*pts.T)
+nrows, ncols = (361,361)
+lon, lat = np.meshgrid(np.linspace(0,360,ncols), np.linspace(-90,90,nrows))
+xg,yg,zg = sph2cart(lon,lat)
+Ti = np.zeros_like(lon)
+for r in range(nrows):
+    for c in range(ncols):
+        v = np.array([xg[r,c], yg[r,c], zg[r,c]])
+        angs = np.arccos(np.dot(pts, v))
+        idx = np.where(angs == 0)[0]
+        if idx.any():
+            Ti[r,c] = T[idx[0]]
+        else:
+            idw = 1 / angs**2 / sum(1 / angs**2)
+            Ti[r,c] = np.sum(T * idw)
+
+# set up map projection
+map = Basemap(projection='ortho', lat_0=30, lon_0=180)
+# draw lat/lon grid lines every 30 degrees.
+map.drawmeridians(np.arange(0, 360, 30))
+map.drawparallels(np.arange(-90, 90, 30))
+# compute native map projection coordinates of lat/lon grid.
+x, y = map(lon, lat)
+# contour data over the map.
+cs = map.contourf(x, y, Temps, 15)
+plt.title('Contours of T')
+plt.show()
+
+
+#plt.imshow(Temps, cmap='hot', interpolation='nearest')
+#plt.show()

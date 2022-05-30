@@ -1,9 +1,5 @@
-from pylab import figure, cm
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits import mplot3d
-from mpl_toolkits.basemap import Basemap
-
+import plotly.graph_objects as go
 import sys as sys
 
 def SurfaceTemperature(lat, time):#From jupyter notebook
@@ -90,6 +86,7 @@ def SurfaceTemperature(lat, time):#From jupyter notebook
   # print('Temperature at', time_string, 'at a latitude of', lat, 'degrees is:', T, 'Kelvin')
   return [T, psi_d]
 
+
 step_size_times_hrs = 2/60
 times_start = 6 # Dawn
 times_stop = 18 # Dusk
@@ -117,27 +114,23 @@ for latitudes in np.linspace(lat_min, lat_max, num_steps_lat):
     long_count = long_count + 1
     Temps[lat_count-1, long_count-1] = SurfaceTemperature(latitudes, times)[0]
 
+#concatenate ones to end of Temps array. This is a workaround for finding the actual values
+#from the dark side of the moon. Implementation of the equation needs to be done.
+darkSide = np.ones((num_steps_lat, num_steps_time), float)
+darkSide = np.concatenate((Temps, darkSide), axis=0)
 
-#this code below was taken from this post: https://stackoverflow.com/questions/22128909/plotting-the-temperature-distribution-on-a-sphere-with-python
+#Plotting the sphere.
+u = np.linspace(0, 2*np.pi, 722)
+v = np.linspace(0, np.pi, 361)
+x=np.outer(np.cos(u), np.sin(v))
+y=np.outer(np.sin(u), np.sin(v))
+z=np.outer(np.ones(np.size(u)), np.cos(v))
 
+fig = go.Figure(go.Surface(
+    surfacecolor = darkSide,
+    colorscale = 'hot',
+    x = x,
+    y = y,
+    z = z))
 
-# naive IDW-like interpolation on regular grid
-nrows, ncols = (361,361)
-lon, lat = np.meshgrid(np.linspace(0,360,ncols), np.linspace(-90,90,nrows))
-
-
-# set up map projection
-map = Basemap(projection='ortho', lat_0=30, lon_0=180)
-# draw lat/lon grid lines every 30 degrees.
-map.drawmeridians(np.arange(0, 360, 30))
-map.drawparallels(np.arange(-90, 90, 30))
-# compute native map projection coordinates of lat/lon grid.
-x, y = map(lon, lat)
-# contour data over the map.
-cs = map.contourf(x, y, Temps, 15)
-plt.title('Contours of T')
-plt.show()
-
-#Below is the 2d view of the (daytime) data from this paper: https://ntrs.nasa.gov/api/citations/20150010748/downloads/20150010748.pdf
-#plt.imshow(Temps, cmap='hot', interpolation='nearest')
-#plt.show()
+fig.show()

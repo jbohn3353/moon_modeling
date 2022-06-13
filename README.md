@@ -1,5 +1,5 @@
-### Current Model, v2
-Adapted from https://github.com/johnowagon/lunar-surface-temperature
+### Current Model, v3
+Adapted from https://github.com/johnowagon/lunar-surface-temperature <br>
 As I wasn't focused on temperature, I believe that there might still need to be work done for modeleing properties on the dark side but this wasn't an issue for irradiance. In addition to the 3D model, this will create a plot of your desired function over the period of a whole day at a specific latitude, specified at the top of model.py
 
 ### How to run

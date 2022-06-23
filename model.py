@@ -70,6 +70,21 @@ def psi(lat, time):
 
   return psi
 
+def model(start_time, end_time, time_step, latitude):
+
+  times = np.linspace(start_time, end_time, round((end_time-start_time)/time_step))
+  output = np.zeros(len(times))
+
+  for i in range(len(times)):
+    time = times[i]
+    time %= 24
+    if time < 6 or time > 18:
+      continue
+
+    output[i] = MODEL_FUNC(psi(latitude, time))
+  
+  return times, output
+
 step_size_times_hrs = 2/60
 times_start = 6 # Dawn
 times_stop = 18 # Dusk
@@ -113,5 +128,18 @@ fig = go.Figure(go.Surface(
     z = z))
 fig.show()
 
-plt.plot(np.linspace(0, 24, round(24/step_size_times_hrs)), surface[round((LATITUDE+90)/lat_step)])
+m = model(0,24,step_size_times_hrs,LATITUDE)
+plt.plot(m[0], m[1])
+
+plt.title("Lunar Model At Latitude: " + str(LATITUDE) + " Degrees")
+plt.xlabel("Lunar time (hr)")
+
+if MODEL_FUNC == temp:
+  y_lab = TEMP_AXIS_LABEL
+elif MODEL_FUNC == power:
+  y_lab = POWER_AXIS_LABEL
+else:
+  y_lab = "Unknown"
+plt.ylabel(y_lab)
+
 plt.show()

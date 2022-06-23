@@ -10,9 +10,11 @@ CELL_EFFICIENCY = 0.25
     # Solar panel power efficiency is not dependent on angle of incidence - not mentioned in datasheet
     # No effect on irradiance by moons atmosphere - atmosphere is practically non existant 
     # No irradiance on the dark side - if there was any it would be EXTREMELY small
+POWER_AXIS_LABEL = "Power (W)"
 def power(psi):
   return np.cos(psi) * SOLAR_CONSTANT * SURFACE_AREA * CELL_EFFICIENCY
 
 # Analytical Equation for the Dayside Temperature (from Hurley et al, 2015)
+TEMP_AXIS_LABEL = "Temperature (K)"
 def temp(psi):
   return (262*(np.sqrt(np.cos(psi)))) + 130

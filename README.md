@@ -9,7 +9,7 @@ pip install -r requirements.txt
 ```
 From there you can run
 ```sh
-python3 model.py
+python3 model.py [latitude] [model_func]
 ```
 and the plot will open in your default browser.
 
@@ -17,4 +17,3 @@ You can easily add functions to model_funcs.py and/or change the value of MODEL_
 
 ### TODO
 - Add abstracted framework for modeling the dark side easily
-- Make the model func and the latitude cmd line args

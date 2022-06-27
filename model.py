@@ -85,61 +85,74 @@ def model(start_time, end_time, time_step, latitude):
   
   return times, output
 
-step_size_times_hrs = 2/60
-times_start = 6 # Dawn
-times_stop = 18 # Dusk
-# Bear in mind that this entire plot is only for dayside temperatures.
+if __name__ == "__main__":
 
-lat_min = -90
-lat_max = 90
-lat_step = 0.5
+  # Parse cmd line arguments if they're there
+  if len(sys.argv) >= 3:
+    try:
+      MODEL_FUNC = globals()[sys.argv[2]]
+    except:
+      sys.exit("Model function cmd line argument not found.")
+  if len(sys.argv) >= 2:
+    LATITUDE = int(sys.argv[1])
 
-num_steps_time = int(((times_stop - times_start)/step_size_times_hrs))
-num_steps_lat = int(((lat_max - lat_min)/lat_step))
-print("Matrix size: ", num_steps_lat, "x", num_steps_time)
+  # Model the sun-side surface
+  step_size_times_hrs = 2/60
+  times_start = 6 # Dawn
+  times_stop = 18 # Dusk
+  # Bear in mind that this entire plot is only for dayside temperatures.
 
-powers = np.zeros((num_steps_lat, num_steps_time), float)
+  lat_min = -90
+  lat_max = 90
+  lat_step = 0.5
 
-lat_count = 0
-for latitude in np.linspace(lat_min, lat_max, num_steps_lat):
-  lat_count = lat_count + 1
-  long_count = 0
-  for time in np.linspace(times_start, times_stop, num_steps_time):
-    long_count = long_count + 1
-    powers[lat_count-1, long_count-1] = MODEL_FUNC(psi(latitude, time))
+  num_steps_time = int(((times_stop - times_start)/step_size_times_hrs))
+  num_steps_lat = int(((lat_max - lat_min)/lat_step))
+  print("Matrix size: ", num_steps_lat, "x", num_steps_time)
 
-#concatenate ones to end of Temps array. This is a workaround for finding the actual values
-#from the dark side of the moon. Implementation of the equation needs to be done.
-dark_side = np.ones((num_steps_lat, num_steps_time), float) * DARK_SIDE
-surface = np.concatenate((powers, dark_side), axis=1)
+  powers = np.zeros((num_steps_lat, num_steps_time), float)
 
-#Plotting the sphere.
-u = np.linspace(0, np.pi, 360)
-v = np.linspace(0, 2*np.pi, 720)
-x=np.outer(np.cos(u), np.sin(v))
-y=np.outer(np.sin(u), np.sin(v))
-z=np.outer(np.ones(np.size(u)), np.cos(v))
+  lat_count = 0
+  for latitude in np.linspace(lat_min, lat_max, num_steps_lat):
+    lat_count = lat_count + 1
+    long_count = 0
+    for time in np.linspace(times_start, times_stop, num_steps_time):
+      long_count = long_count + 1
+      powers[lat_count-1, long_count-1] = MODEL_FUNC(psi(latitude, time))
 
-fig = go.Figure(go.Surface(
-    surfacecolor = surface,
-    colorscale = 'hot',
-    x = x,
-    y = y,
-    z = z))
-fig.show()
+  # Concatenate a default value for the darkside onto the sunsude model. 
+  # Implementation of the equation needs to be done.
+  dark_side = np.ones((num_steps_lat, num_steps_time), float) * DARK_SIDE
+  surface = np.concatenate((powers, dark_side), axis=1)
 
-m = model(0,24,step_size_times_hrs,LATITUDE)
-plt.plot(m[0], m[1])
+  #Plotting the sphere.
+  u = np.linspace(0, np.pi, 360)
+  v = np.linspace(0, 2*np.pi, 720)
+  x=np.outer(np.cos(u), np.sin(v))
+  y=np.outer(np.sin(u), np.sin(v))
+  z=np.outer(np.ones(np.size(u)), np.cos(v))
 
-plt.title("Lunar Model At Latitude: " + str(LATITUDE) + " Degrees")
-plt.xlabel("Lunar time (hr)")
+  fig = go.Figure(go.Surface(
+      surfacecolor = surface,
+      colorscale = 'hot',
+      x = x,
+      y = y,
+      z = z))
+  fig.show()
 
-if MODEL_FUNC == temp:
-  y_lab = TEMP_AXIS_LABEL
-elif MODEL_FUNC == power:
-  y_lab = POWER_AXIS_LABEL
-else:
-  y_lab = "Unknown"
-plt.ylabel(y_lab)
+  # Plot the default/cmd line latitude over a day
+  m = model(0,24,step_size_times_hrs,LATITUDE)
+  plt.plot(m[0], m[1])
 
-plt.show()
+  plt.title("Lunar Model At Latitude: " + str(LATITUDE) + " Degrees")
+  plt.xlabel("Lunar time (hr)")
+
+  if MODEL_FUNC == temp:
+    y_lab = TEMP_AXIS_LABEL
+  elif MODEL_FUNC == power:
+    y_lab = POWER_AXIS_LABEL
+  else:
+    y_lab = "Unknown"
+  plt.ylabel(y_lab)
+
+  plt.show()
